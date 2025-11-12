@@ -1,0 +1,410 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="How to Scope a Global Application - Kenneth Frencher">
+  <article class="py-16 bg-white">
+    <div class="container mx-auto px-6 md:px-8 max-w-4xl">
+      <!-- Header -->
+      <div class="mb-12">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 mb-4 inline-flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Papers
+        </a>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900">How to Scope a Global Application</h1>
+        <div class="flex flex-wrap gap-2 mb-6">
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">ServiceNow</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">Application Development</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">Scoping</span>
+        </div>
+        <p class="text-xl text-gray-600 leading-relaxed">
+          A detailed walkthrough of scoping global applications in ServiceNow, covering namespace management, 
+          best practices, and common pitfalls to avoid.
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div class="prose prose-lg max-w-none">
+        <p class="lead">
+          My team has been tasked with scoping a legacy global application so I wanted to get my thoughts down on 
+          what I think that would entail and what possible issues might occur along the way.
+        </p>
+
+        <p>
+          These are the steps and mitigations I think need to be made with scoping a global application. These steps 
+          have the caveat that no new features will be added during the scoping process and the table structure 
+          stays largely the same.
+        </p>
+
+        <h2>Step 1: Find All Artifacts Associated with Global App</h2>
+        <p>
+          With a scoped application you can go to the scope, and you will see all the various artifacts in one place. 
+          This allows the platform to export the entire scope for you. Global applications have no platform support 
+          in identifying the resources associated with the application.
+        </p>
+
+        <p>
+          Many artifacts in an application are associated with a table. You can probably get most artifacts 
+          associated with a global application by identifying the tables.
+        </p>
+
+        <h3>Identifying Global Tables</h3>
+        <p>
+          Global tables will be prefixed with <code>u_</code> so they can be located easily. If there is only one 
+          global application on the instance you can assume all tables starting with <code>u_</code> are part of 
+          the application. If there are multiple global applications on the same instance, then you'll have to 
+          figure out which tables belong to each application.
+        </p>
+
+        <p>
+          Once you have identified the tables you can go directly to each table and bring up the Configure All 
+          screen. That will show you all the associated Business Rules, Client Scripts, Dictionary Entries, 
+          Notifications, etc. associated with the table.
+        </p>
+
+        <h3>Artifacts Not Directly Related to Tables</h3>
+        <p>
+          That should get you the tables and everything associated with the table. These are some artifacts that 
+          aren't directly related to a table you'll need to check if they exist:
+        </p>
+        <ul>
+          <li>Script Includes</li>
+          <li>UI Scripts</li>
+          <li>Relationships (sys_relationship)</li>
+          <li>Views
+            <ul>
+              <li>Form</li>
+              <li>List
+                <ul>
+                  <li>List Controls</li>
+                </ul>
+              </li>
+              <li>Related Lists</li>
+            </ul>
+          </li>
+          <li>Field Styles</li>
+          <li>UI Macros</li>
+          <li>UI Formatters</li>
+          <li>Roles</li>
+          <li>System Properties
+            <ul>
+              <li>System Property Categories</li>
+            </ul>
+          </li>
+          <li>Application Menus (sys_app_application)
+            <ul>
+              <li>Modules (sys_app_module)</li>
+            </ul>
+          </li>
+          <li>Notifications (global notifications not associated with a table)</li>
+          <li>Service Portal Portals and all associated widgets and pages</li>
+          <li>Dashboards and associated reports on the dashboard</li>
+          <li>Images</li>
+          <li>Catalog
+            <ul>
+              <li>Catalog Items and related artifacts</li>
+              <li>Record Producers and related artifacts</li>
+            </ul>
+          </li>
+          <li>Reports</li>
+          <li>Integrations
+            <ul>
+              <li>Inbound REST</li>
+              <li>Outbound REST</li>
+              <li>LDAP Data Source</li>
+              <li>JDBC Data Source</li>
+            </ul>
+          </li>
+          <li>Scheduled Jobs</li>
+          <li>Scheduled Imports</li>
+          <li>Process Flows</li>
+          <li>Script Actions</li>
+          <li>Events in the event registry</li>
+          <li>Search Configuration in Service Portal and Global Search</li>
+        </ul>
+
+        <h2>Step 2: Copy Identified Artifacts to Scope</h2>
+        <p>
+          Once you have identified all the artifacts they need to be recreated in the scope. You'll need to go to 
+          each artifact and create an identical version in the scope with some possible minor changes to account for 
+          table name changes and possibly small differences in the global and scope API if there is a script field 
+          associated with the artifact.
+        </p>
+
+        <p>
+          This will be a tedious process if there is no automation. Some of these artifacts have lots of configuration 
+          options. So, you'll have to make sure you are setting all the fields correctly. Some forms do not show all 
+          the settings, so when you recreate some of these artifacts, you'll want to look at the XML directly to make 
+          sure you aren't missing some information.
+        </p>
+
+        <div class="bg-yellow-50 border-l-4 border-yellow-600 p-6 my-8">
+          <h4 class="text-lg font-semibold mb-2">⚠️ Important</h4>
+          <p>
+            You are going to need to track what artifacts have been created as you go along. Applications can have 
+            hundreds or even more than a thousand artifacts. It will be easy to get lost and not know if you have 
+            recreated everything.
+          </p>
+        </div>
+
+        <h2>Step 3: Move the Data</h2>
+        <p>
+          If you can get your product owner to agree not to move the data then you can skip this part. That's ideal 
+          in this situation. If not, you have a difficult task.
+        </p>
+
+        <p>
+          The data model has changed, so you can't just move the data as is from one table to another. You're going 
+          to have to find all the existing data, including data in system tables that may not be directly in your 
+          scoped application. These would be data like sys_journal, sys_attachment, sys_audit, etc.
+        </p>
+
+        <p>
+          Then you're going to have to write a migration script that involves some kind of transform of the data so 
+          it can be inserted into the new data model.
+        </p>
+
+        <div class="bg-red-50 border-l-4 border-red-600 p-6 my-8">
+          <h4 class="text-lg font-semibold mb-2">🚨 Challenge</h4>
+          <p>
+            This type of data migration has not been done before, so it needs research to understand how to do it 
+            properly. Because of the novelty of this work, we don't even know what we don't know.
+          </p>
+        </div>
+
+        <h2>What Can Go Wrong?</h2>
+        <p>
+          The steps seem simple. Identify artifacts, copy artifacts to scope, and move data. So, what can go wrong? 
+          Let's take each step one at a time.
+        </p>
+
+        <p>
+          Before I go into what can go wrong with the individual steps, I also want you to keep in mind that a lot 
+          of these global apps have been around so long we aren't the original creators. There is functionality in 
+          these apps that sometimes we don't even know exist. If you don't know some functionality exists, then how 
+          can you identify the code behind it? Also, this makes it difficult to regression test to ensure the app is 
+          working properly.
+        </p>
+
+        <h3>Identifying Artifacts</h3>
+        <p>
+          The core of the problem here is you might not identify everything.
+        </p>
+
+        <p>
+          The list of resources I identified in Step 1 are things I know about. I am not a ServiceNow platform 
+          engineer so there can be things outside of the list that exist that are missed and won't be noticed until 
+          there is a problem.
+        </p>
+
+        <p>
+          Things can still be missed even if they are on the list because not every artifact will be easily 
+          identifiable as an artifact associated with the global app. You can name a Script Include anything. How is 
+          the developer supposed to know Script Include Foo is associated with app Bar? There might not be a direct 
+          connection. You just have to know Foo exists. This same scenario exists for other artifacts as well.
+        </p>
+
+        <h3>Copying Artifacts to Scope</h3>
+        <p>
+          The primary problem here is lack of automation. If you are manually copying hundreds of artifacts with 
+          complex configuration by hand you will make mistakes.
+        </p>
+
+        <p>
+          You could mitigate this with some automation and validation. Automation meaning you create some scripts 
+          that automate the process of copying an artifact from global to scope, so you aren't doing that by hand.
+        </p>
+
+        <p>
+          Validation could be that you write a script that knows which artifacts need to be copied and then it 
+          validates that all those artifacts have been copied. That way you know when you are done.
+        </p>
+
+        <p>
+          Without some kind of mitigation here some artifacts may not get recreated in the scope, or they may be 
+          misconfigured. This will lead to subtle bugs in the scoped app. You could have misconfigured ACLs, 
+          notifications that don't go out, records that don't get saved because an error is thrown, etc.
+        </p>
+
+        <h3>Moving the Data</h3>
+        <p>
+          I don't need to go into detail here. We will need to write some code to migrate the data. This is an 
+          unknown. This could turn out to be very straightforward, or it could require vendor assistance. We won't 
+          know until someone tries to do this.
+        </p>
+
+        <h3>Regression Testing</h3>
+        <p>
+          We will probably not have good regression testing on these apps. None of the apps use automated testing 
+          and our testers cover so many apps that I don't think we can rely on manual testing to identify the subtle 
+          bugs that can emerge from literally changing every artifact in an application.
+        </p>
+
+        <p>
+          Ultimately, we will be asking our customers to take on a level of risk after the apps have been scoped.
+        </p>
+
+        <p>
+          I don't see a good way of mitigating this issue. We aren't going to write a bunch of automated tests now. 
+          We don't have access to original developers. Testers aren't going to miraculously be experts on every 
+          single aspect of these applications. There are going to be gaps in the regression testing. Those gaps will 
+          ultimately be exposed to the product owner if there are issues.
+        </p>
+
+        <h2>Possible Risk Mitigations</h2>
+
+        <h3>1. Have a Data Migration Strategy</h3>
+        <p>
+          I don't think you want to start scoping until you have a good idea of how to move the data. If you spend 
+          a lot of time creating the new scoped app only to find out you don't know how to move the data you will 
+          get stuck. At that point you won't know what to tell people schedule wise or if it's possible.
+        </p>
+
+        <p>
+          If you have a strategy up front you can at least plan around that. Even if that plan says that the task 
+          will be difficult and take a long time, or the plan says we won't be able to move some aspects of the data. 
+          For example, audit logs can be extremely large. We may have to say we can move the data, but we can't move 
+          the audit logs.
+        </p>
+
+        <h3>2. Automate as Much of the Copying as is Practical</h3>
+        <p>
+          Create a few scripts that will automatically copy some ServiceNow artifacts. This could manifest as a 
+          button that appears at the top of the artifact form that allows you to clone the artifact to a scope. It 
+          could also be some kind of library that allows you to copy multiple artifacts. Really depends on what we 
+          find is possible.
+        </p>
+
+        <p>
+          I have done some prototyping on what this library could look in the 
+          <a href="https://github.com/kfrencher/servicenow-klf-global/blob/main/README.md#KLF_ScoperUtils" target="_blank" rel="noopener noreferrer">
+            KLF_ScoperUtils script
+          </a>.
+        </p>
+
+        <h3>3. Validate Artifacts Have Been Copied</h3>
+        <p>
+          Write a script that knows which artifacts need to be copied and then it validates that all those artifacts 
+          have been copied. It should display which artifacts still need to be created in the scoped app. That way 
+          you know when you are done.
+        </p>
+
+        <h3>4. Build the Scoped App on a Different Instance</h3>
+        <p>
+          If we build the scoped app on the same instance as the global app the table names will be very similar. I 
+          think there is a high likelihood that there will be mistakes made where the conditions are incorrect 
+          because the old table is chosen. Also, there's a possibility that the scoped app will still be using some 
+          of the global resources on the existing instance.
+        </p>
+
+        <p>
+          It may be safer to build the app on an instance that does not have the existing app. That way picking the 
+          incorrect reference can't happen.
+        </p>
+
+        <p>
+          This could also help the regression testing because you'd be testing the app without any of the existing 
+          global resources on the same instance. That would verify that you have properly recreated all the 
+          application dependencies.
+        </p>
+
+        <h2>Conclusion</h2>
+        <p>
+          Scoping a global application is a significant undertaking that requires careful planning, automation where 
+          possible, and thorough testing. The key challenges are:
+        </p>
+        <ul>
+          <li>Identifying all artifacts comprehensively</li>
+          <li>Accurately recreating artifacts in the scope</li>
+          <li>Migrating data while preserving integrity</li>
+          <li>Ensuring adequate regression testing</li>
+        </ul>
+
+        <p>
+          By implementing the risk mitigations discussed—having a data migration strategy, automating the copying 
+          process, validating completeness, and building on a separate instance—you can significantly reduce the 
+          likelihood of issues and ensure a smoother transition from global to scoped application.
+        </p>
+      </div>
+
+      <!-- Back to Papers -->
+      <div class="mt-12 pt-8 border-t border-gray-200">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 inline-flex items-center text-lg font-medium">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to All Papers
+        </a>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .prose {
+    color: #374151;
+  }
+  
+  .prose h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+    color: #111827;
+  }
+  
+  .prose h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+  
+  .prose h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #374151;
+  }
+  
+  .prose p {
+    margin-bottom: 1.5rem;
+    line-height: 1.75;
+  }
+  
+  .prose ul, .prose ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .prose code {
+    background-color: #f3f4f6;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .prose a {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+  
+  .prose a:hover {
+    color: #1d4ed8;
+  }
+  
+  .lead {
+    font-size: 1.25rem;
+    color: #4b5563;
+    margin-bottom: 2rem;
+  }
+</style>

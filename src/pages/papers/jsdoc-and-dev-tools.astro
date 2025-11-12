@@ -1,0 +1,285 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="ServiceNow JSDoc and Dev Tools - Kenneth Frencher">
+  <article class="py-16 bg-white">
+    <div class="container mx-auto px-6 md:px-8 max-w-4xl">
+      <!-- Header -->
+      <div class="mb-12">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 mb-4 inline-flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Papers
+        </a>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900">ServiceNow JSDoc and Dev Tools</h1>
+        <div class="flex flex-wrap gap-2 mb-6">
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">ServiceNow</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">JSDoc</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">Developer Tools</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">Documentation</span>
+        </div>
+        <p class="text-xl text-gray-600 leading-relaxed">
+          A comprehensive guide to implementing JSDoc in ServiceNow development and leveraging development tools 
+          for better code documentation and maintainability.
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div class="prose prose-lg max-w-none">
+        <p class="lead">
+          I'd like to let developers know about a few tools they can use to help them write code with ServiceNow. 
+          My primary goal is to introduce the concept of using JSDoc as a way of commenting and annotating our code.
+        </p>
+
+        <h2>JSDoc</h2>
+        <p>
+          JavaScript is an untyped language which can lead to difficulty understanding what objects are used in an 
+          application. That makes understanding and modifying existing code more difficult. For example, when you're 
+          trying to understand if a parameter being passed into a function is a GlideRecord or a JavaScript object 
+          or a string, you can't tell at a glance. You'll have to read through the code to know.
+        </p>
+
+        <p>
+          You also can't get tooling support for things like renaming variables, checking to see if the types you're 
+          passing and returning to a function are correct, or code completion. The inability to describe the types 
+          you're using in JavaScript is one of the reasons the popularity of TypeScript has grown over the years. 
+          TypeScript is a lot like JavaScript but has native support for type information. We don't have the option 
+          to use TypeScript here as ServiceNow is constrained to JavaScript. One way to document the JavaScript we're 
+          writing is to use JSDoc.
+        </p>
+
+        <p>
+          JSDoc provides a way to document JavaScript code using a standard language. The language is described at 
+          the website <a href="https://jsdoc.app" target="_blank" rel="noopener noreferrer">jsdoc.app</a>. You write 
+          JSDoc in JavaScript comments. These comments only annotate the code. They have no effect on the execution 
+          of the code. There are a lot of IDEs that understand JSDoc because it is a popular standard. The tools read 
+          JSDoc to give you code completion, type checking, and refactoring capability when you write your code.
+        </p>
+
+        <h3>Example: Function Without JSDoc</h3>
+        <p>When looking through code in our scoped applications usually you're going to see functions that look like this:</p>
+        
+        <pre><code>{`function findGroupsThatContainUser(user, encodedQuery, limit, onlyMailGroups) {
+  var groupAggregate = new GlideAggregate('sys_user_grmember');
+  groupAggregate.groupBy('group');
+  groupAggregate.addQuery('user', user.getUniqueValue());
+  groupAggregate.addEncodedQuery(encodedQuery || 'group.active=true');
+  groupAggregate.query();
+  
+  limit = limit || 10;
+  
+  var groups = [];
+  while(groupAggregate.next() || groups.length < limit) {
+    groups.push(groupAggregate.group.getRefRecord());
+  }
+  return groups;
+}`}</code></pre>
+
+        <p>
+          Even if you've tried to give your parameters descriptive names and you've tried to name your variables 
+          well in your function body it can be difficult to know what the types and requirements are of consuming 
+          this function.
+        </p>
+
+        <h3>Example: Function With JSDoc</h3>
+        <p>
+          Below is the same function annotated with JSDoc comments. The JSDoc comments are verbose. You can't get 
+          around it. You're basically bolting an optional type system onto JavaScript. There are four types of JSDoc 
+          annotations being used in the example. They are prefixed by the "@" character. They are param, example, 
+          returns, and type.
+        </p>
+
+        <pre><code>{`/**
+ * Searches sys_user_group table for groups that include this user. Can optionally include
+ * a GlideRecord encodedQuery, limit, and if you only want mail groups. Will return an empty
+ * list if no groups are found
+ * @example
+ * //Will return 5 active mail groups that contain myUser as a member
+ * var groups = searchGroupsWithUser(myUser, 'group.active=true', 5, true);
+ * @param {GlideRecord} user sys_user, Limit to groups that contain this user
+ * @param {string} [encodedQuery=active=true] GlideRecord encoded query
+ * @param {number} [limit=10] Maximum number of search results
+ * @param {boolean} [onlyMailGroups=true] true if you only want mail groups
+ * @returns {GlideRecord[]} List of found primary group names or empty list if non found
+ */
+function findGroupsThatContainUser(user, encodedQuery, limit, onlyMailGroups) {
+  var groupAggregate = new GlideAggregate('sys_user_grmember');
+  groupAggregate.groupBy('group');
+  groupAggregate.addQuery('user', user.getUniqueValue());
+  groupAggregate.addEncodedQuery(encodedQuery || 'group.active=true');
+  
+  if(onlyMailGroups) {
+    groupAggregate.addQuery('group.name', 'LIKE', '%mail%');
+  }
+  
+  groupAggregate.query();
+  limit = limit || 10;
+  
+  /** @type {GlideRecord[]} */
+  var groups = [];
+  
+  while(groupAggregate.next() || groups.length < limit) {
+    groups.push(groupAggregate.group.getRefRecord());
+  }
+  return groups;
+}`}</code></pre>
+
+        <h3>Advantages and Disadvantages of JSDoc</h3>
+        
+        <h4>Advantages:</h4>
+        <ul>
+          <li>Better code documentation and understanding</li>
+          <li>IDE tooling support for code completion and type checking</li>
+          <li>Refactoring capabilities</li>
+          <li>Common language for commenting code across teams</li>
+          <li>Saves time when reading code months later</li>
+        </ul>
+
+        <h4>Disadvantages:</h4>
+        <ul>
+          <li>Comments can get out of sync with code if not maintained</li>
+          <li>Verbose syntax takes up more space</li>
+          <li>Learning curve (though not steep)</li>
+          <li>Requires discipline to keep comments updated</li>
+        </ul>
+
+        <h2>Development Tools with JSDoc Support</h2>
+
+        <h3>1. Native ServiceNow JavaScript Editor</h3>
+        <p>
+          The native editor has some basic support. You'll get basic info dialogs when you consume functions, 
+          but you won't get refactoring capability and the info dialogs are basic.
+        </p>
+
+        <h3>2. SN Utils with sn-scriptsync Visual Studio Code Extension</h3>
+        <p>
+          SN Utils is a browser plugin that allows ServiceNow script fields to be synced to VS Code. You edit 
+          the code in VS Code and it is automatically synced to ServiceNow when you save the file in VS Code. 
+          This allows you to access VS Code's JSDoc support.
+        </p>
+        
+        <p>Benefits include:</p>
+        <ul>
+          <li>Enhanced info dialogs in VS Code</li>
+          <li>Code refactoring tools like variable and method renaming</li>
+          <li>Code navigation between symbols in the codebase</li>
+          <li>Intelligent renaming instead of string replacement</li>
+        </ul>
+
+        <h3>3. ServiceNow Extension for VS Code</h3>
+        <p>
+          This tool is more complicated to use and setup. It can download an entire scoped application to VS Code. 
+          Since VS Code has access to all the code, the refactoring tools work much better, but that comes with 
+          the tradeoff that you can potentially be modifying many files at the same time.
+        </p>
+
+        <div class="bg-yellow-50 border-l-4 border-yellow-600 p-6 my-8">
+          <h4 class="text-lg font-semibold mb-2">⚠️ Caution</h4>
+          <p>
+            You must be careful when syncing with this tool because if you're working in both VS Code and the 
+            browser you can overwrite your work. Only use the ServiceNow Extension for VS Code if you primarily 
+            work in VS Code or if you're dealing with a scoped application with a lot of JavaScript.
+          </p>
+        </div>
+
+        <h2>Conclusion</h2>
+        <p>
+          I've been using JSDoc with my code for several years and find it very useful in better documenting my 
+          code and also getting benefits from tooling support. If you are going to document your code like this, 
+          it's important to keep the comments up to date or they can be counterproductive.
+        </p>
+
+        <p>
+          The primary goal should be to write code faster and make it easier to understand. JSDoc, combined with 
+          the right development tools, can significantly improve your ServiceNow development workflow.
+        </p>
+      </div>
+
+      <!-- Back to Papers -->
+      <div class="mt-12 pt-8 border-t border-gray-200">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 inline-flex items-center text-lg font-medium">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to All Papers
+        </a>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .prose {
+    color: #374151;
+  }
+  
+  .prose h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+    color: #111827;
+  }
+  
+  .prose h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+  
+  .prose h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #374151;
+  }
+  
+  .prose p {
+    margin-bottom: 1.5rem;
+    line-height: 1.75;
+  }
+  
+  .prose ul, .prose ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .prose pre {
+    background-color: #1f2937;
+    color: #e5e7eb;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  
+  .prose code {
+    font-family: 'Courier New', monospace;
+  }
+  
+  .prose a {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+  
+  .prose a:hover {
+    color: #1d4ed8;
+  }
+  
+  .lead {
+    font-size: 1.25rem;
+    color: #4b5563;
+    margin-bottom: 2rem;
+  }
+</style>

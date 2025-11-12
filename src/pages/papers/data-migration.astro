@@ -1,0 +1,351 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Transferring Application Data Between Instances - Kenneth Frencher">
+  <article class="py-16 bg-white">
+    <div class="container mx-auto px-6 md:px-8 max-w-4xl">
+      <!-- Header -->
+      <div class="mb-12">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 mb-4 inline-flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Papers
+        </a>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900">Transferring Application Data Between Instances</h1>
+        <div class="flex flex-wrap gap-2 mb-6">
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">ServiceNow</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">Data Migration</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">DevOps</span>
+        </div>
+        <p class="text-xl text-gray-600 leading-relaxed">
+          Best practices and strategies for efficiently transferring application data between ServiceNow instances 
+          while maintaining data integrity and minimizing downtime.
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div class="prose prose-lg max-w-none">
+        <p class="lead">
+          Transferring applications between instances is a two-step process. First, the application code must be 
+          migrated from the source instance to the target instance. Next, the application data must be moved.
+        </p>
+
+        <h2>Transferring Application Code</h2>
+        <p>
+          Moving application code is supported by ServiceNow. The application code can be exported as an update set 
+          and moved. This application code should include all the scoped code plus any code that is in global. All 
+          the code that is moved should be in an application.
+        </p>
+
+        <p>
+          You can include global code in an application by creating a global scoped application. Virtually all 
+          applications will have small parts that are in global scope. It is very important to put these global parts 
+          in an application, so they are easily identifiable as part of the application. If these global parts are 
+          not included in an application there is nothing to identify those global artifacts as being part of an 
+          application other than a possible naming convention.
+        </p>
+
+        <p>
+          Moving the application code should be low effort if you can identify the global parts, and you aren't 
+          making modifications to the code.
+        </p>
+
+        <h3>Potential Code Modifications</h3>
+        <p>
+          The developer may need to make modifications to the code if the application has made modifications to 
+          global tables. These modifications can be things like:
+        </p>
+        <ul>
+          <li>Adding business rules to global tables</li>
+          <li>Adding columns to global tables</li>
+          <li>Making modifications to out of the box widgets</li>
+        </ul>
+
+        <p>
+          If the application were to be migrated without removing these modifications it could break other 
+          applications on the target instance.
+        </p>
+
+        <h3>Group Management Considerations</h3>
+        <p>
+          An application may also need to update the way group management is implemented. In some legacy applications 
+          group membership was managed directly in ServiceNow. This was never ideal but was acceptable when the 
+          application is isolated. When the application is on a shared instance group management needs to be handled 
+          through the standard enterprise solution. Developers need to make sure their application does not grant any 
+          user administration roles outside of the development team.
+        </p>
+
+        <h2>Transferring Application Data</h2>
+        <p>
+          Moving data between instances is supported by ServiceNow, but moving all data associated with an 
+          application is not supported. The developer must identify all data that is stored by the application and 
+          move that data to the new instance.
+        </p>
+
+        <p>
+          Identifying all data associated with an application can be difficult depending on what ServiceNow features 
+          the application is using. Some of the most complicated data to move are data associated with workflow 
+          contexts, flow designer flows, and catalog data. Fortunately, most applications aren't using these 
+          features, so we avoid the most difficult problems.
+        </p>
+
+        <h3>Identifying Application Data</h3>
+        <p>
+          It's easy to identify the data directly associated with the tables in the scope because all the scoped 
+          tables will be listed. Identifying global data will be more difficult. Common tables that have application 
+          data include:
+        </p>
+        <ul>
+          <li><strong>Event</strong> (sysevent)</li>
+          <li><strong>Approval</strong> (sysapproval_approver)</li>
+          <li><strong>Group approval</strong> (sysapproval_group)</li>
+          <li><strong>Knowledge</strong> (kb_knowledge)</li>
+          <li><strong>Survey Results</strong> (asmt_metric_result)
+            <ul>
+              <li>Assessment Instance Question (asmt_assessment_instance_question)</li>
+            </ul>
+          </li>
+        </ul>
+
+        <h2>Steps to Migrate an Application (Developer Focused)</h2>
+
+        <h3>Step 1: Transfer Application Code</h3>
+        <ol>
+          <li>Ensure all application artifacts are contained in a Scoped Application or Globally Scoped Application</li>
+          <li>Create a global application if one doesn't exist for global artifacts</li>
+          <li>Check for cross-dependencies between applications:
+            <ul>
+              <li>Script includes</li>
+              <li>Groups</li>
+              <li>Integrations</li>
+              <li>UI Interfaces (Service Portal pages/widgets)</li>
+            </ul>
+          </li>
+          <li>Publish both scoped and global applications to an update set</li>
+          <li>Export the update set and save locally</li>
+          <li>Upload and commit the published application update set on the target instance</li>
+        </ol>
+
+        <h3>Step 2: Prepare for Data Migration</h3>
+        <p>Things to check before migrating the data:</p>
+        <ul>
+          <li>Make sure sys_user and sys_user_group table data are compatible between instances</li>
+          <li>Check to make sure groups referenced in data exist in the target system</li>
+          <li>Check to make sure users in data exist in target system</li>
+          <li>Check notifications for any notifications directly sent to groups or users</li>
+          <li>Investigate the application for any tables it is using outside of its scope</li>
+        </ul>
+
+        <h3>Step 3: Migrate the Application Data</h3>
+        
+        <h4>Method 1: Export → XML (Manual)</h4>
+        <p>
+          Using this method will include associated attachment and journal field data. There are limitations to 
+          this export method:
+        </p>
+        <ul>
+          <li>List fields containing references to users and groups will not be mapped correctly</li>
+          <li>Does not include audit data (changes to records over time)</li>
+          <li>Will not include currency and price data (unless all currency is in USD)</li>
+          <li>User fields mapped by display value by default (remember to change to sys_user.user_name)</li>
+        </ul>
+
+        <p><strong>Process:</strong></p>
+        <ol>
+          <li>Identify and migrate groups/users with roles or contained in the data</li>
+          <li>Go to each table and export the data</li>
+          <li>Manipulate the glide.ui.per_page property if needed (default max is 100 rows)</li>
+          <li>Save exported data locally</li>
+          <li>Upload to the target system</li>
+        </ol>
+
+        <h4>Method 2: Automating Data Transfer with an API</h4>
+        <p>
+          A programmatic approach was developed to address limitations with manual data transfer. The API needed 
+          to address:
+        </p>
+        <ul>
+          <li>Mapping groups from source to target system</li>
+          <li>Mapping users from source to target system</li>
+          <li>Identifying notifications that have hardcoded groups</li>
+          <li>Identifying the set of groups and users used in a dataset</li>
+          <li>Transferring all data in a scope</li>
+          <li>Transferring all data in an individual table</li>
+        </ul>
+
+        <div class="bg-blue-50 border-l-4 border-blue-600 p-6 my-8">
+          <h4 class="text-lg font-semibold mb-2">💡 Key Benefit</h4>
+          <p>
+            With the API approach, you can script the data transfer upfront and execute a script on deployment day 
+            instead of manually moving all the data. This allows for more consistent and repeatable migrations.
+          </p>
+        </div>
+
+        <h2>What Can Go Wrong with a Bad Application Transfer</h2>
+        <p>
+          It's possible even after significant effort that we miss things. The following is a non-exhaustive list of 
+          problems that could surface:
+        </p>
+        <ul>
+          <li>Searches not returning the correct data (search indexes not properly reindexed)</li>
+          <li>Users losing access to data (groups not transferred properly or incorrect roles)</li>
+          <li>Notifications not being sent (groups not transferred properly)</li>
+          <li>Errors thrown by business rules and script includes because of missing data</li>
+          <li>Picklists that contain groups being incorrect</li>
+          <li>Service Portal forms not displaying correctly</li>
+          <li>Missing audit records, attachments, and journal entries</li>
+          <li>Missing images</li>
+          <li>Activities log displaying incorrect or incomplete information</li>
+        </ul>
+
+        <h3>Post-Migration Monitoring</h3>
+        <p>
+          Close monitoring of the application may be needed in the initial week or two after transfer:
+        </p>
+        <ul>
+          <li>Monitor logs to ensure new errors aren't appearing</li>
+          <li>Check email logs to make sure emails are sent</li>
+          <li>Be prepared for data access issues</li>
+          <li>Keep a copy of the old application around for comparison</li>
+        </ul>
+
+        <h2>Evaluation of Data Export Methods</h2>
+        <p>
+          There are several ways of exporting data from ServiceNow. Each method has its advantages and limitations:
+        </p>
+
+        <h3>XML Parameter</h3>
+        <ul>
+          <li>Only exports raw data, no related data</li>
+          <li>Not scriptable</li>
+          <li>Less feature-rich than Export → XML</li>
+        </ul>
+
+        <h3>Export → XML</h3>
+        <ul>
+          <li>Includes journal fields and attachments</li>
+          <li>Manual process (not scriptable)</li>
+          <li>Best manual export method</li>
+          <li>Can timeout with large attachments</li>
+        </ul>
+
+        <h3>Add to Update Set Utility</h3>
+        <ul>
+          <li>Scriptable and allows progressive writing to update set</li>
+          <li>Useful for large datasets</li>
+          <li>Limitation: generates very large update sets for large datasets</li>
+        </ul>
+
+        <h3>Export Sets</h3>
+        <ul>
+          <li>Does not handle tables with extensions well</li>
+          <li>Requires mid server</li>
+          <li>Must export from each child table separately</li>
+        </ul>
+
+        <h3>API Export (Recommended for Programmatic Transfer)</h3>
+        <ul>
+          <li>Most flexible approach</li>
+          <li>Can use gs.unloadRecordToXML or GlideUnloader</li>
+          <li>Most complicated to implement</li>
+          <li>Preferred method for programmatically transferring data</li>
+        </ul>
+
+        <h2>Unanswered Questions About Application Transfer</h2>
+        <p>
+          These are questions that still require investigation:
+        </p>
+        <ul>
+          <li>Are there hardcoded sys_ids in code that may be invalid after transfer?</li>
+          <li>Do you need to reindex after transfer?</li>
+          <li>How to handle future scheduled sysevent records?</li>
+          <li>How to handle flows and classic flows in progress?</li>
+          <li>Should we migrate sys_preference (user customizations)?</li>
+          <li>Should we move bookmarks (sys_ui_bookmark)?</li>
+          <li>How to handle catalog data properly?</li>
+          <li>How to handle user tagging data?</li>
+          <li>How to backout a transfer if needed?</li>
+        </ul>
+
+        <h2>Conclusion</h2>
+        <p>
+          Transferring application data between ServiceNow instances is a complex process that requires careful 
+          planning and execution. Whether you choose a manual or automated approach depends on the size and 
+          complexity of your application. The key is to identify all dependencies, test thoroughly, and monitor 
+          closely after migration.
+        </p>
+      </div>
+
+      <!-- Back to Papers -->
+      <div class="mt-12 pt-8 border-t border-gray-200">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 inline-flex items-center text-lg font-medium">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to All Papers
+        </a>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .prose {
+    color: #374151;
+  }
+  
+  .prose h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+    color: #111827;
+  }
+  
+  .prose h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+  
+  .prose h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #374151;
+  }
+  
+  .prose p {
+    margin-bottom: 1.5rem;
+    line-height: 1.75;
+  }
+  
+  .prose ul, .prose ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .prose a {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+  
+  .prose a:hover {
+    color: #1d4ed8;
+  }
+  
+  .lead {
+    font-size: 1.25rem;
+    color: #4b5563;
+    margin-bottom: 2rem;
+  }
+</style>

@@ -1,0 +1,404 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Strategies for Using ServiceNow Automated Test Framework (ATF) - Kenneth Frencher">
+  <article class="py-16 bg-white">
+    <div class="container mx-auto px-6 md:px-8 max-w-4xl">
+      <!-- Header -->
+      <div class="mb-12">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 mb-4 inline-flex items-center">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Papers
+        </a>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 text-gray-900">Strategies for Using ServiceNow Automated Test Framework (ATF)</h1>
+        <div class="flex flex-wrap gap-2 mb-6">
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">ServiceNow</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">Testing</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">Automation</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">ATF</span>
+          <span class="px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-md">CI/CD</span>
+        </div>
+        <p class="text-xl text-gray-600 leading-relaxed">
+          This paper explores best practices for implementing ATF in enterprise environments, covering modular test 
+          design, reproducibility, and integration with CI/CD pipelines.
+        </p>
+      </div>
+
+      <!-- Content -->
+      <div class="prose prose-lg max-w-none">
+        
+        <h2>Unit Testing vs Functional Testing</h2>
+        <p>
+          ATF supports two types of testing. There are various names for both types of testing so I'm just going to 
+          refer to them as functional testing and unit testing. With functional testing defined as testing the 
+          application using a UI as a manual tester would test, and unit testing defined as directly testing the 
+          JavaScript or other ServiceNow components directly without a user interface.
+        </p>
+
+        <h2>Unit Testing</h2>
+
+        <h3>What Can You Unit Test?</h3>
+        <p>
+          Most of the time unit testing in ServiceNow refers to testing one of the various server-side components in 
+          ServiceNow. This could be code in a script include, workflows, flow designer flows, or business rules. I've 
+          primarily unit tested script includes. Script includes are JavaScript libraries that are written by the 
+          developer and called from various places in ServiceNow. Script includes are used in implementing the 
+          business logic and workflow of an application.
+        </p>
+
+        <p>
+          You can also test things like business rules, workflows, and flow designer flows, but I've found those 
+          components more efficiently tested in a functional test. Some server-side components in ServiceNow are more 
+          easily tested than others. How easily and how much of an application can be unit tested depends on how the 
+          application is written. I've found that an application is more testable if code is extracted from UI 
+          actions, business rules, and workflows and placed in a script include.
+        </p>
+
+        <div class="bg-blue-50 border-l-4 border-blue-600 p-6 my-8">
+          <h4 class="text-lg font-semibold mb-2">💡 Testing Philosophy</h4>
+          <p>
+            My primary goal of writing unit tests has been to write code faster. You can have different goals when 
+            writing unit tests for example, to improve code quality, enable refactoring, and have a regression test 
+            suite. I believe to reach those goals you need fairly high levels of test code coverage which might not 
+            be worth the time investment with the relatively low levels of complexity in the applications we write.
+          </p>
+        </div>
+
+        <h3>Unit Test Framework Choice</h3>
+        <p>
+          ServiceNow provides two APIs to unit test. The first is a basic test API provided by ServiceNow comprised 
+          of an assertEqual method and the ability to interact with the test framework by designating the output 
+          message of your test and whether it passed or failed. The second test API is called Jasmine. Jasmine has 
+          been around for years and provides a robust API for specifying your test specifications and generating test 
+          results as a report.
+        </p>
+
+        <p>
+          The basic ServiceNow API seems appealing at first because of the simple API, but scales badly. Once you 
+          write a few unit tests with the basic test API ServiceNow supplies you'll start to find that test 
+          organization, reporting results, and the expressiveness of the API are lacking. Jasmine has a steeper 
+          learning curve, but is well worth the investment if you're going to write unit tests.
+        </p>
+
+        <h3>Unit Test Naming and Organization</h3>
+        <p>
+          Unit tests are written along with the code, so I consider them apart of the code base. I think they should 
+          be written and maintained in the same scoped application as the application under development. This is 
+          different from how I consider functional tests. I don't think functional tests should be in the same scoped 
+          application. I consider them more distant from the application code and I wouldn't want to entangle my 
+          application update sets with the functional test update sets.
+        </p>
+
+        <p>
+          Another consideration is how to name the unit test. Since I primarily test script includes I give the test 
+          the same name as the script include and append "Test" to the end of the name. So if I have a script include 
+          called "TaskManager" I call the unit test "TaskManagerTest". I also do one more thing. Most developers use 
+          studio as an IDE. Studio shows most of the files related to a scoped application. Unfortunately it does not 
+          show ATF files, so a developer will not know you have written unit tests just by looking in Studio. However, 
+          Studio does show script includes. So what I do is move the contents of my ATF test to a script include 
+          called "TaskManagerTest". This gives discoverability to the unit test because the unit test shows up in 
+          Studio right after the script include under test.
+        </p>
+
+        <h3>Summary</h3>
+        <p>
+          I think unit testing is useful. It has its place. I would not set a goal of anything like 100% test 
+          coverage and really wouldn't even have my primary goal as improving code quality. I think you need to reach 
+          certain levels of code coverage to reach those goals and I don't think it's worth the investment. If you 
+          are going to write unit tests I would write them with a primary goal of quicker development. I would use 
+          Jasmine as my test framework. I would limit to testing script includes, and I'd be intentional about how I 
+          organized my tests.
+        </p>
+
+        <h2>Functional Testing</h2>
+
+        <h3>What Can You Test?</h3>
+        <p>
+          ATF is extensible in this area, so with effort you can test pretty much anything. For example, an item like 
+          the classification guide can be tested by writing an extension to the ATF. In reality it's probably not 
+          worth creating custom extensions to test every piece of your application. ServiceNow does have a broad 
+          selection of UI test functions included with ATF. Forms in both Service Portal and UI16 are mostly fully 
+          testable unless there are custom form fields added to the form. ATF can test the majority of what our 
+          manual testers are testing.
+        </p>
+
+        <h3>Test Creation</h3>
+        <p>
+          Test creation is fairly simple. There is a learning curve, but I believe the learning curve is shallow. 
+          Tests are comprised of test steps. Most of the learning curve is understanding what steps to use in a test 
+          and how the steps work together. There are around 100 different steps to choose from, but you're typically 
+          only going to use a handful repeatedly. After a couple days of writing tests I think most developers will 
+          dramatically reduce the time it takes to write one. I think the time scale of writing a new test is less 
+          than an hour, depending on how extensive the test is. What makes functional tests dramatically different 
+          than unit tests is there is no code. These tests are just configuration.
+        </p>
+
+        <h4>Example Test: Submit Task Form</h4>
+        <p>
+          The following is an example of test steps that you'd find in a functional test. This test submits a task 
+          form in Service Portal that has two required fields, Label and Description:
+        </p>
+
+        <ol>
+          <li>Create a User</li>
+          <li>Open a Form (SP)</li>
+          <li>Field State Validation (SP)</li>
+          <li>Set Field Values (SP)</li>
+          <li>Click a UI Action (SP)</li>
+          <li>UI Action Visibility Validation (SP)</li>
+          <li>Field Values Validation (SP)</li>
+        </ol>
+
+        <p>
+          These steps are common steps when testing a form. The SP after the step name is to designate the test step 
+          is testing in Service Portal as opposed to UI16. This test starts by creating a user in step 1. The best 
+          practice is to create a user in the test if possible to avoid using an existing user that might change and 
+          make the test more brittle. After creating the user in step 1 the test opens the form in step 2, validates 
+          that the label and description field are visible in step 3, sets the label and description fields in step 
+          4, clicks on the Submit button in step 5, validates that the Submit button is gone after submitting the 
+          form in step 6, and finally validates the Status field on the form is set to Submitted in step 7 as the 
+          last step.
+        </p>
+
+        <h3>Test Composition</h3>
+        <p>
+          I've worked on these types of tests before using Selenium. A pattern emerges in these tests where you're 
+          largely performing the same sets of steps in a test suite repeatedly. What happens is the initial few tests 
+          take longer to write than the rest of the test suite because you start reusing groups of test steps from 
+          previous tests.
+        </p>
+
+        <p>
+          Unfortunately, by default ServiceNow does not allow you to easily compose tests. The only functionality it 
+          gives you is the ability to copy an entire test. I had to write some code to enable test composition, but 
+          now that it is written anyone can use it. With test composition I'm no longer managing single steps. I'm 
+          managing groups of steps and building my tests with those reusable groups.
+        </p>
+
+        <div class="bg-green-50 border-l-4 border-green-600 p-6 my-8">
+          <h4 class="text-lg font-semibold mb-2">✨ Test Templates</h4>
+          <p>
+            For example, let's say that our task has a workflow where the task is submitted by a user, then is 
+            approved by a manager, then is provisioned by a provisioner. I can break this process up into three 
+            separate "test templates". I can have a template called "Submit task as common user", another called 
+            "Approve task as manager", and another called "Provision task as provisioner". Now when I need to create 
+            a test for "Submit, Approve, and Provision Task" I'm just combining these templates together.
+          </p>
+        </div>
+
+        <h3>The Maintenance Problem</h3>
+        <p>
+          What I found with Selenium tests was the test creation piece is actually the easy part. The difficulty lies 
+          in the maintenance. Once you build out your test suite and you have 40 to 50 tests it becomes difficult to 
+          manage tests on an individual level. Ideally you want to have some strategy of managing multiple tests at 
+          the same time. That way if there's a change made to the application, and it affects a group of tests you 
+          can correct them all at once.
+        </p>
+
+        <p>
+          For example, let's say that I created 10 tests that included my "Submit task as a common user" template. If 
+          I add a new required field to the task form, those 10 tests are going to break. I would have to update each 
+          test to include setting the new field. Ideally I would be able to update the test template and push that 
+          update to all the tests that are using that template. This functionality does not exist, and I don't know 
+          if it's even possible, but if we're going to create larger test suites you want some way to reasonably 
+          manage those tests.
+        </p>
+
+        <h4>Strategies for Test Resilience:</h4>
+        <ul>
+          <li>Only fill out required fields</li>
+          <li>Generate any test data in the test itself</li>
+          <li>Constrain the test suite to only features that don't frequently change</li>
+        </ul>
+
+        <p>
+          Those strategies only get you so far, so if you don't have a mechanism to manage multiple tests from a 
+          centralized place I think we really want to constrain the size of these test suites.
+        </p>
+
+        <h3>Functional Test Naming and Organization</h3>
+        <p>
+          Functional tests are more displaced from the code under test than unit tests. You could even be using 
+          multiple different functional test frameworks. For example, you could use both Selenium and ServiceNow ATF 
+          to create functional tests against a ServiceNow application. The combination of the fact that I don't 
+          consider functional tests part of the codebase and ServiceNow's method of capturing changes in update sets 
+          leads me to the conclusion that functional tests should be in their own scoped application. Keeping 
+          functional tests in their own scoped application clearly separates the functional test code from application 
+          code and provides a simple path for deploying functional tests between environments.
+        </p>
+
+        <p>
+          My suggestion is if you have a scoped application called "My Scoped App" the functional tests be created in 
+          a scoped application called "My Scoped App Test".
+        </p>
+
+        <h4>Naming Convention Example</h4>
+        <p>
+          I've thought a little bit about what would be useful as a naming convention for tests. The test name begins 
+          with a shortened version of the scope name. That is to group tests together in the same scope. I think a 
+          lot of our tests will be written against forms in UI16 and Service Portal. ServiceNow refers to UI16 as 
+          Classic Environment. So the second part of the name would be the environment of the form either CLASSIC for 
+          UI16 or SP for Service Portal. The third part of the name would be the table for the form. The fourth part 
+          of the name would be a two or three word description of the test.
+        </p>
+
+        <p>
+          For example, if I was creating a Service Portal test for a task form in Library scope that was testing 
+          submitting and closing of the task the name would be, <strong>"LIB SP Task Submit, Close"</strong>.
+        </p>
+
+        <h3>Smoke Testing in Production</h3>
+        <p>
+          I know, I know, the vendor says you absolutely should not do this. I just disagree. We already do manual 
+          smoke testing in production so I don't see why it's so wrong to run a subset of automated tests in 
+          production. During a recent deployment of a new application our tester had to validate like 20 tickets. I 
+          think that would have been easier if we had an automated test suite that was marked safe for production.
+        </p>
+
+        <p>
+          We could include some kind of flag in the test marking it as safe to run in production and maybe put more 
+          security around the test forcing you to run the tests one at a time and not an entire suite. I think there 
+          are scenarios that automated testing in production make sense and we shouldn't reject the idea outright 
+          without doing some analysis.
+        </p>
+
+        <h3>How Do We Get the Teams Started?</h3>
+        <p>
+          There's a lot here and you can't do it all at once. I think each team needs to touch ATF a little bit at 
+          first to even be able to understand some of the concepts I'm presenting. I'd get each team to write one 
+          test. Test something very simple. If time is a concern you could timebox this task to a certain amount of 
+          time within a sprint and if the team can't accomplish it in that time period just roll that same amount of 
+          time into the next sprint.
+        </p>
+
+        <p>
+          I would get the testers involved as well. Have the tester click the test button and watch it pass in the 
+          test environment. It probably doesn't make sense to have the tester involved with test creation at this 
+          point, but I think it does make sense to have the testers know how to run a test and understand the results. 
+          This pretty much comes down to knowing where to click a button.
+        </p>
+
+        <h2>Automatic Test Generation</h2>
+        <p>
+          Automatic test generation is something we should keep an eye on. I don't think a tool exists that would fit 
+          our requirements now, but the space is evolving. There are a couple tools I saw that I'd like to call to 
+          your attention.
+        </p>
+
+        <h3>ATF Test Generator (ServiceNow)</h3>
+        <p>
+          One tool is created by ServiceNow called ATF Test Generator. It claims to be a one click solution that can 
+          generate a regression test suite by viewing activity on a ServiceNow instance. This option is not available 
+          to us because they don't support on prem installations at this time. On prem is an afterthought for 
+          ServiceNow, but sometimes their cloud solutions eventually get ported to on prem.
+        </p>
+
+        <h3>Regress ATF Recorder</h3>
+        <p>
+          Regress ATF Recorder is an open-source custom application written by a single developer that adds the 
+          ability to create an ATF test by recording the actions a user does during form submission. This tool allows 
+          a user with little knowledge of ATF to create a test. It has limited capability though:
+        </p>
+        <ul>
+          <li>Only works on classic forms and catalog items in Service Portal</li>
+          <li>Won't generate tests for forms written in Service Portal</li>
+          <li>No support for any form customization</li>
+          <li>Not supported by the vendor</li>
+          <li>Primarily supported by one developer</li>
+        </ul>
+
+        <p>
+          The only reason I mention this tool is in the right circumstance it could enable a non-developer to create 
+          automated tests. So in the circumstance where you don't want your developers to do this type of testing, 
+          but maybe you want to enable testers to have some level of automated testing this might be an option.
+        </p>
+
+        <h2>Conclusion</h2>
+        <p>
+          That is everything I have on ATF with respect to unit and functional testing. The key takeaways are:
+        </p>
+        <ul>
+          <li>Use Jasmine for unit testing if you decide to write unit tests</li>
+          <li>Focus unit tests on script includes for maximum value</li>
+          <li>Functional tests should be in separate scoped applications</li>
+          <li>Use test composition to improve test creation efficiency</li>
+          <li>Plan for test maintenance from the beginning</li>
+          <li>Consider production smoke testing for critical validations</li>
+          <li>Start small and build expertise gradually</li>
+        </ul>
+      </div>
+
+      <!-- Back to Papers -->
+      <div class="mt-12 pt-8 border-t border-gray-200">
+        <a href="/kfrencher-bio-site/papers" class="text-blue-600 hover:text-blue-700 inline-flex items-center text-lg font-medium">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to All Papers
+        </a>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .prose {
+    color: #374151;
+  }
+  
+  .prose h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+    color: #111827;
+  }
+  
+  .prose h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: #1f2937;
+  }
+  
+  .prose h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: #374151;
+  }
+  
+  .prose p {
+    margin-bottom: 1.5rem;
+    line-height: 1.75;
+  }
+  
+  .prose ul, .prose ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .prose a {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+  
+  .prose a:hover {
+    color: #1d4ed8;
+  }
+  
+  .lead {
+    font-size: 1.25rem;
+    color: #4b5563;
+    margin-bottom: 2rem;
+  }
+</style>
