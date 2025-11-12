@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { withBase } from "../utils/paths";
 ---
 
 <BaseLayout title="Kenneth Frencher – Full Stack Senior Software Engineer">
@@ -20,16 +21,16 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         15+ years of experience in full-cycle software development.
       </p>
       <div class="flex flex-wrap justify-center gap-4 mb-12">
-        <a href="/kfrencher-bio-site/about" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
+        <a href={withBase("/about")} class="px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
           About Me
         </a>
-        <a href="/kfrencher-bio-site/projects" class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
+        <a href={withBase("/projects")} class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
           Projects
         </a>
-        <a href="/kfrencher-bio-site/papers" class="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
+        <a href={withBase("/papers")} class="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
           Papers
         </a>
-        <a href="/kfrencher-bio-site/contact" class="px-8 py-4 bg-gray-700 hover:bg-gray-800 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
+        <a href={withBase("/contact")} class="px-8 py-4 bg-gray-700 hover:bg-gray-800 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
           Contact
         </a>
       </div>

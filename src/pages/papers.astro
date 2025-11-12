@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import PaperCard from "../components/PaperCard.astro";
+import { withBase } from "../utils/paths";
 
 const papers = [
   {
@@ -8,28 +9,28 @@ const papers = [
     description: "A comprehensive guide to implementing JSDoc in ServiceNow development and leveraging development tools for better code documentation and maintainability.",
     date: "2023",
     tags: ["ServiceNow", "JSDoc", "Developer Tools", "Documentation"],
-    link: "/kfrencher-bio-site/papers/jsdoc-and-dev-tools"
+    link: withBase("/papers/jsdoc-and-dev-tools")
   },
   {
     title: "Transferring Application Data Between Instances",
     description: "Best practices and strategies for efficiently transferring application data between ServiceNow instances while maintaining data integrity and minimizing downtime.",
     date: "2023",
     tags: ["ServiceNow", "Data Migration", "DevOps"],
-    link: "/kfrencher-bio-site/papers/data-migration"
+    link: withBase("/papers/data-migration")
   },
   {
     title: "How to Scope a Global Application",
     description: "A detailed walkthrough of scoping global applications in ServiceNow, covering namespace management, best practices, and common pitfalls to avoid.",
     date: "2023",
     tags: ["ServiceNow", "Application Development", "Scoping"],
-    link: "/kfrencher-bio-site/papers/scoping-global-app"
+    link: withBase("/papers/scoping-global-app")
   },
   {
     title: "Strategies for Using ServiceNow Automated Test Framework (ATF)",
     description: "This paper explores best practices for implementing ATF in enterprise environments, covering modular test design, reproducibility, and integration with CI/CD pipelines.",
     date: "2023",
     tags: ["ServiceNow", "Testing", "Automation", "ATF", "CI/CD"],
-    link: "/kfrencher-bio-site/papers/atf-strategies"
+    link: withBase("/papers/atf-strategies")
   }
 ];
 ---
